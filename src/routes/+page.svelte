@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { guess } from 'web-audio-beat-detector';
 
-	const beatPath = '/qwerhacks.mp3';
+	const DEFAULT_BEAT_PATH = '/qwerhacks.mp3';
 
 	/**
 	 * @type {AudioContext}
@@ -22,12 +22,31 @@
 	 * @type {NodeJS.Timer | undefined}
 	 */
 	let beatInterval;
+	let beatPath = DEFAULT_BEAT_PATH;
 	let showBeat = false;
+
+	/**
+	 * @type {FileList}
+	 */
+	let files;
 
 	onMount(init);
 
 	function init() {
 		initialized = true;
+	}
+
+	/**
+	 * @param {{ bpm: any; offset: any; }} obj
+	 */
+	function finishProcessingSong(obj) {
+		bpm = obj.bpm;
+		offset = obj.offset;
+		// type error with TS :(
+		// tempo = obj.tempo;
+		period = 1 / (obj.bpm / 60);
+		loaded = true;
+		loading = false;
 	}
 
 	function setup() {
@@ -36,18 +55,12 @@
 			const AudioContext = window.AudioContext;
 			audioCtx = new AudioContext();
 		}
-		fetch(beatPath)
+		fetch(DEFAULT_BEAT_PATH)
 			.then((data) => data.arrayBuffer())
 			.then((buffer) => audioCtx.decodeAudioData(buffer))
 			.then((audioBuffer) => guess(audioBuffer))
 			.then((obj) => {
-				bpm = obj.bpm;
-				offset = obj.offset;
-				// type error with TS :(
-				// tempo = obj.tempo;
-				period = 1 / (obj.bpm / 60);
-				loaded = true;
-				loading = false;
+				finishProcessingSong(obj)
 			})
 			.catch((err) => console.error(err));
 	}
@@ -67,6 +80,40 @@
 
 	function pause() {
 		clearInterval(beatInterval);
+	}
+
+	/**
+	 * @param {Blob} file
+	 */
+	function readAsArrayBuffer(file){
+		return new Promise((resolve, reject) => {
+			var fr = new FileReader();
+			fr.onload = () => {
+				resolve(fr.result )
+			};
+			fr.onerror = reject;
+			fr.readAsArrayBuffer(file);
+		});
+	}
+
+	function handleUpload(){
+		console.log(files)
+		const file = files[0];
+		if (file === undefined) {
+			// TODO: error handling
+			return;
+		}
+
+		beatPath = window.URL.createObjectURL(file);
+
+		readAsArrayBuffer(file)
+			.then((buffer) => audioCtx.decodeAudioData(buffer))
+			.then((audioBuffer) => guess(audioBuffer))
+			.then((obj) => {
+				console.log("done")
+				finishProcessingSong(obj)
+			})
+			.catch((err) => console.error(err));
 	}
 </script>
 
@@ -88,6 +135,10 @@
 		<audio on:play={play} on:pause={pause} bind:this={audioElement} src={beatPath} controls>
 			<track kind="captions" />
 		</audio>
+		<fieldset>
+			<input type="file" id="audio-file" accept="audio/mpeg, audio/ogg, audio/*" bind:files />
+			<button type="button" id="upload" style="margin-top: 20px;" on:click={handleUpload}>Upload</button>
+		</fieldset>
 		<p class="big-text">
 			{#if showBeat}
 				<span style="color:green">on</span>
