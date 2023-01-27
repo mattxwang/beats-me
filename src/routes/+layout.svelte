@@ -12,7 +12,12 @@
 	</main>
 
 	<footer>
-		<p>a proof of concept, nothing spicy. shoutout svelte!</p>
+		<p>
+			shoutout <a href="https://kit.svelte.dev/">SvelteKit</a>,
+			<a href="https://tailwindcss.com/">Tailwind</a>,
+			<a href="https://www.npmjs.com/package/web-audio-beat-detector">web-audio-beat-detector</a>.
+			made by disha & <a href="https://matthewwang.me">matt</a> with 💖
+		</p>
 	</footer>
 </div>
 
