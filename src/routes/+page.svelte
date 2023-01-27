@@ -1,31 +1,101 @@
 <script>
-	import Counter from './Counter.svelte';
-	import welcome from '$lib/images/svelte-welcome.webp';
-	import welcome_fallback from '$lib/images/svelte-welcome.png';
+	import { onMount } from 'svelte';
+	import { guess } from 'web-audio-beat-detector';
+
+	const beatPath = '/qwerhacks.mp3';
+
+	/**
+	 * @type {AudioContext}
+	 */
+	let audioCtx;
+
+	let bpm = 0,
+		offset = 0,
+		// tempo = 0,
+		period = 0;
+	let initialized = false,
+		loaded = false,
+		loading = false;
+
+	let audioElement;
+	/**
+	 * @type {NodeJS.Timer | undefined}
+	 */
+	let beatInterval;
+	let showBeat = false;
+
+	onMount(init);
+
+	function init() {
+		initialized = true;
+	}
+
+	function setup() {
+		loading = true;
+		if (!audioCtx) {
+			const AudioContext = window.AudioContext;
+			audioCtx = new AudioContext();
+		}
+		fetch(beatPath)
+			.then((data) => data.arrayBuffer())
+			.then((buffer) => audioCtx.decodeAudioData(buffer))
+			.then((audioBuffer) => guess(audioBuffer))
+			.then((obj) => {
+				bpm = obj.bpm;
+				offset = obj.offset;
+				// type error with TS :(
+				// tempo = obj.tempo;
+				period = 1 / (obj.bpm / 60);
+				loaded = true;
+				loading = false;
+			})
+			.catch((err) => console.error(err));
+	}
+
+	function startBeatCounter() {
+		beatInterval = setInterval(() => {
+			showBeat = true;
+			setTimeout(() => {
+				showBeat = false;
+			}, 200);
+		}, period * 1000);
+	}
+
+	function play() {
+		setTimeout(startBeatCounter, offset * 1000);
+	}
+
+	function pause() {
+		clearInterval(beatInterval);
+	}
 </script>
 
 <svelte:head>
-	<title>Home</title>
-	<meta name="description" content="Svelte demo app" />
+	<title>beats me</title>
+	<meta name="description" content="beats me - a quick demo" />
 </svelte:head>
 
 <section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcome_fallback} alt="Welcome" />
-			</picture>
-		</span>
-
-		to your new<br />SvelteKit app
-	</h1>
-
-	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
-	</h2>
-
-	<Counter />
+	<h1>beats me</h1>
+	{#if loading || !initialized}
+		<h2>Loading...</h2>
+	{:else if !loaded}
+		<button on:click={setup}> Start </button>
+	{:else}
+		<h2>
+			BPM: {bpm.toFixed(2)} | Offset: {offset.toFixed(2)}s | Period: {period.toFixed(2)}s
+		</h2>
+		<audio on:play={play} on:pause={pause} bind:this={audioElement} src={beatPath} controls>
+			<track kind="captions" />
+		</audio>
+		<p class="big-text">
+			{#if showBeat}
+				<span style="color:green">on</span>
+			{:else}
+				off
+			{/if}
+		</p>
+	{/if}
 </section>
 
 <style>
@@ -41,19 +111,7 @@
 		width: 100%;
 	}
 
-	.welcome {
-		display: block;
-		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
-	}
-
-	.welcome img {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		display: block;
+	.big-text {
+		font-size: 10vw;
 	}
 </style>
