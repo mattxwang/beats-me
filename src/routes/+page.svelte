@@ -1,7 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
-	import Select from './Select.svelte';
 	import { guess } from 'web-audio-beat-detector';
+	import FileSelect from './FileSelect.svelte';
+	import Select from './Select.svelte';
 
 	const DEFAULT_BEAT_PATH = '/qwerhacks.mp3';
 
@@ -92,17 +93,15 @@
 		setup({}, selectedBeat);
 	}
 
-	function startBeatCounter() {
-		beatInterval = setInterval(() => {
-			showBeat = true;
-			setTimeout(() => {
-				showBeat = false;
-			}, 200);
-		}, period * 1000);
-	}
-
 	function play() {
-		setTimeout(startBeatCounter, offset * 1000);
+		setTimeout(() => {
+			beatInterval = setInterval(() => {
+				showBeat = true;
+				setTimeout(() => {
+					showBeat = false;
+				}, 200);
+			}, period * 1000);
+		}, offset * 1000);
 	}
 
 	function pause() {
@@ -123,7 +122,7 @@
 
 <svelte:head>
 	<title>beats me</title>
-	<meta name="description" content="beats me - a quick demo" />
+	<meta name="description" content="beats me - a quick demo of client-side beat detection" />
 </svelte:head>
 
 <section>
@@ -135,18 +134,9 @@
 	{:else}
 		<p class="my-3 py-3 text-white">
 			{#if showBeat}
-				<div
-					class="w-36 h-36 bg-green-700 rounded-full flex justify-center items-center text-center p-5 shadow-xl"
-				>
-					on
-				</div>
+				<div class="large-circle bg-green-700">on</div>
 			{:else}
-				<!-- off -->
-				<div
-					class="w-36 h-36 bg-gray-900 rounded-full flex justify-center items-center text-center p-5 shadow-xl"
-				>
-					off
-				</div>
+				<div class="large-circle bg-gray-900">off</div>
 			{/if}
 		</p>
 		<div class="max-w-sm rounded overflow-hidden shadow-lg px-6 py-4 bg-white">
@@ -173,30 +163,7 @@
 			on:change={handleSelectChange}
 		/>
 		<p class="my-3">or, upload a custom song</p>
-		<label
-			class="w-64 flex flex-col items-center px-4 py-6 bg-white text-blue-500 rounded-lg shadow-lg tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white"
-		>
-			<svg
-				class="w-8 h-8"
-				fill="currentColor"
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 20 20"
-				aria-hidden="true"
-			>
-				<path
-					d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z"
-				/>
-			</svg>
-			<span class="mt-2 text-base leading-normal">select a file</span>
-			<input
-				class="hidden"
-				type="file"
-				id="audio-file"
-				accept="audio/mpeg, audio/ogg, audio/*"
-				bind:files
-				on:change={handleUpload}
-			/>
-		</label>
+		<FileSelect bind:files on:change={handleUpload} />
 	{/if}
 </section>
 
