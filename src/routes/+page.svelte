@@ -127,41 +127,76 @@
 </svelte:head>
 
 <section>
-	<h1>beats me</h1>
+	<h1 class="text-5xl my-6">beats me</h1>
 	{#if loading || !initialized}
 		<h2>Loading...</h2>
 	{:else if !loaded}
-		<button on:click={setup}> Start </button>
+		<button class="btn btn-blue" on:click={setup}> start </button>
 	{:else}
-		<h2>
-			{beatPath} | BPM: {bpm.toFixed(2)} | Offset: {offset.toFixed(2)}s | Period: {period.toFixed(
-				2
-			)}s
-		</h2>
-		<audio on:play={play} on:pause={pause} src={beatPath} controls>
-			<track kind="captions" />
-		</audio>
-		<p>choose from our presets:</p>
+		<p class="my-3 py-3 text-white">
+			{#if showBeat}
+				<div
+					class="w-36 h-36 bg-green-700 rounded-full flex justify-center items-center text-center p-5 shadow-xl"
+				>
+					on
+				</div>
+			{:else}
+				<!-- off -->
+				<div
+					class="w-36 h-36 bg-gray-900 rounded-full flex justify-center items-center text-center p-5 shadow-xl"
+				>
+					off
+				</div>
+			{/if}
+		</p>
+		<div class="max-w-sm rounded overflow-hidden shadow-lg px-6 py-4 bg-white">
+			<dl class="sm:grid sm:grid-cols-2 sm:gap-4 sm:px-6">
+				<dt class="text-gray-500">Song</dt>
+				<dd class="text-gray-900">{beatPath}</dd>
+
+				<dt class="text-gray-500">BPM / Period</dt>
+				<dd class="text-gray-900">{bpm.toFixed(2)} / {period.toFixed(2)}s</dd>
+
+				<dt class="text-gray-500">Offset</dt>
+				<dd class="text-gray-900">{offset.toFixed(2)}s</dd>
+			</dl>
+			<audio class="mt-3" on:play={play} on:pause={pause} src={beatPath} controls>
+				<track kind="captions" />
+			</audio>
+		</div>
+
+		<p class="my-3">choose from our presets:</p>
 		<Select
 			options={PRESETS}
 			display_func={(o) => o}
 			bind:value={selectedBeat}
 			on:change={handleSelectChange}
 		/>
-		<p>or, upload a custom song</p>
-		<fieldset>
-			<input type="file" id="audio-file" accept="audio/mpeg, audio/ogg, audio/*" bind:files />
-			<button type="button" id="upload" style="margin-top: 20px;" on:click={handleUpload}
-				>Upload</button
+		<p class="my-3">or, upload a custom song</p>
+		<label
+			class="w-64 flex flex-col items-center px-4 py-6 bg-white text-blue-500 rounded-lg shadow-lg tracking-wide border border-blue-500 cursor-pointer hover:bg-blue-500 hover:text-white"
+		>
+			<svg
+				class="w-8 h-8"
+				fill="currentColor"
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 20 20"
+				aria-hidden="true"
 			>
-		</fieldset>
-		<p class="big-text">
-			{#if showBeat}
-				<span class="text-green">on</span>
-			{:else}
-				off
-			{/if}
-		</p>
+				<path
+					d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z"
+				/>
+			</svg>
+			<span class="mt-2 text-base leading-normal">select a file</span>
+			<input
+				class="hidden"
+				type="file"
+				id="audio-file"
+				accept="audio/mpeg, audio/ogg, audio/*"
+				bind:files
+				on:change={handleUpload}
+			/>
+		</label>
 	{/if}
 </section>
 
@@ -172,17 +207,5 @@
 		justify-content: center;
 		align-items: center;
 		flex: 0.6;
-	}
-
-	h1 {
-		width: 100%;
-	}
-
-	.big-text {
-		font-size: 10vw;
-	}
-
-	.text-green {
-		color: green;
 	}
 </style>
