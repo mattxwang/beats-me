@@ -1,8 +1,23 @@
 <script>
 	import { onMount } from 'svelte';
+	import Select from './Select.svelte';
 	import { guess } from 'web-audio-beat-detector';
 
 	const DEFAULT_BEAT_PATH = '/qwerhacks.mp3';
+
+	const PRESETS = [
+		DEFAULT_BEAT_PATH,
+		'/champagne.mp3',
+		'/class.mp3',
+		'/delight.mp3',
+		'/drawl.mp3',
+		'/haze.mp3',
+		'/heaven.mp3',
+		'/inferno.mp3',
+		'/lounge.mp3',
+		'/monster.mp3',
+		'/tennis.mp3'
+	];
 
 	/**
 	 * @type {AudioContext}
@@ -13,16 +28,16 @@
 		offset = 0,
 		// tempo = 0,
 		period = 0;
+
 	let initialized = false,
 		loaded = false,
 		loading = false;
-
-	let audioElement;
 	/**
 	 * @type {NodeJS.Timer | undefined}
 	 */
 	let beatInterval;
 	let beatPath = DEFAULT_BEAT_PATH;
+	let selectedBeat = DEFAULT_BEAT_PATH;
 	let showBeat = false;
 
 	/**
@@ -30,39 +45,51 @@
 	 */
 	let files;
 
-	onMount(init);
-
-	function init() {
-		initialized = true;
-	}
+	onMount(() => (initialized = true));
 
 	/**
-	 * @param {{ bpm: any; offset: any; }} obj
+	 * @param {{}} _
+	 * @param {string} file
 	 */
-	function finishProcessingSong(obj) {
-		bpm = obj.bpm;
-		offset = obj.offset;
-		// type error with TS :(
-		// tempo = obj.tempo;
-		period = 1 / (obj.bpm / 60);
-		loaded = true;
-		loading = false;
-	}
-
-	function setup() {
+	function setup(_, file = DEFAULT_BEAT_PATH) {
 		loading = true;
+		beatPath = file;
 		if (!audioCtx) {
 			const AudioContext = window.AudioContext;
 			audioCtx = new AudioContext();
 		}
-		fetch(DEFAULT_BEAT_PATH)
+		fetch(file)
 			.then((data) => data.arrayBuffer())
 			.then((buffer) => audioCtx.decodeAudioData(buffer))
 			.then((audioBuffer) => guess(audioBuffer))
 			.then((obj) => {
-				finishProcessingSong(obj)
+				bpm = obj.bpm;
+				offset = obj.offset;
+				// type error with TS :(
+				// tempo = obj.tempo;
+				period = 1 / (obj.bpm / 60);
+				loaded = true;
+				loading = false;
 			})
 			.catch((err) => console.error(err));
+	}
+
+	/**
+	 * @param {Event} e
+	 */
+	function handleSelectChange(e) {
+		if (!e.target) {
+			// TODO: errors?
+			return;
+		}
+		// TODO: fix this tsignore?
+		/**
+		 * @type {HTMLSelectElement}
+		 */
+		// @ts-ignore
+		const target = e.target;
+		selectedBeat = target.value;
+		setup({}, selectedBeat);
 	}
 
 	function startBeatCounter() {
@@ -82,38 +109,15 @@
 		clearInterval(beatInterval);
 	}
 
-	/**
-	 * @param {Blob} file
-	 */
-	function readAsArrayBuffer(file){
-		return new Promise((resolve, reject) => {
-			var fr = new FileReader();
-			fr.onload = () => {
-				resolve(fr.result )
-			};
-			fr.onerror = reject;
-			fr.readAsArrayBuffer(file);
-		});
-	}
-
-	function handleUpload(){
-		console.log(files)
+	function handleUpload() {
 		const file = files[0];
 		if (file === undefined) {
 			// TODO: error handling
 			return;
 		}
 
-		beatPath = window.URL.createObjectURL(file);
-
-		readAsArrayBuffer(file)
-			.then((buffer) => audioCtx.decodeAudioData(buffer))
-			.then((audioBuffer) => guess(audioBuffer))
-			.then((obj) => {
-				console.log("done")
-				finishProcessingSong(obj)
-			})
-			.catch((err) => console.error(err));
+		const path = window.URL.createObjectURL(file);
+		setup({}, path);
 	}
 </script>
 
@@ -130,18 +134,30 @@
 		<button on:click={setup}> Start </button>
 	{:else}
 		<h2>
-			BPM: {bpm.toFixed(2)} | Offset: {offset.toFixed(2)}s | Period: {period.toFixed(2)}s
+			{beatPath} | BPM: {bpm.toFixed(2)} | Offset: {offset.toFixed(2)}s | Period: {period.toFixed(
+				2
+			)}s
 		</h2>
-		<audio on:play={play} on:pause={pause} bind:this={audioElement} src={beatPath} controls>
+		<audio on:play={play} on:pause={pause} src={beatPath} controls>
 			<track kind="captions" />
 		</audio>
+		<p>choose from our presets:</p>
+		<Select
+			options={PRESETS}
+			display_func={(o) => o}
+			bind:value={selectedBeat}
+			on:change={handleSelectChange}
+		/>
+		<p>or, upload a custom song</p>
 		<fieldset>
 			<input type="file" id="audio-file" accept="audio/mpeg, audio/ogg, audio/*" bind:files />
-			<button type="button" id="upload" style="margin-top: 20px;" on:click={handleUpload}>Upload</button>
+			<button type="button" id="upload" style="margin-top: 20px;" on:click={handleUpload}
+				>Upload</button
+			>
 		</fieldset>
 		<p class="big-text">
 			{#if showBeat}
-				<span style="color:green">on</span>
+				<span class="text-green">on</span>
 			{:else}
 				off
 			{/if}
@@ -164,5 +180,9 @@
 
 	.big-text {
 		font-size: 10vw;
+	}
+
+	.text-green {
+		color: green;
 	}
 </style>
