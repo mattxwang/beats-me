@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { guess } from 'web-audio-beat-detector';
 	import FileSelect from './FileSelect.svelte';
+	import Radio from './Radio.svelte';
 	import Select from './Select.svelte';
 
 	const DEFAULT_BEAT_PATH = '/qwerhacks.mp3';
@@ -20,12 +21,36 @@
 		'/tennis.mp3'
 	];
 
+	const MULTIPLIER_OPTIONS = [
+		{
+			label: 'Normal',
+			value: '1'
+		},
+		{
+			label: 'Double-time',
+			value: '2'
+		},
+		{
+			label: 'Half-time',
+			value: '0.5'
+		},
+		{
+			label: 'Quad-time',
+			value: '4'
+		},
+		{
+			label: 'Quarter-time',
+			value: '0.25'
+		}
+	];
+
 	/**
 	 * @type {AudioContext}
 	 */
 	let audioCtx;
 
 	let bpm = 0,
+		originalBpm = 0,
 		offset = 0,
 		// tempo = 0,
 		period = 0;
@@ -46,7 +71,26 @@
 	 */
 	let files;
 
+	/**
+	 * @type {string}
+	 */
+	let selectedMultiplier;
+
 	onMount(() => (initialized = true));
+
+	/**
+	 * @param {number} bpm
+	 * @returns {number}
+	 */
+	function clampBPM(bpm) {
+		if (bpm > 160) {
+			return clampBPM(bpm / 2);
+		}
+		if (bpm < 40) {
+			return clampBPM(bpm * 2);
+		}
+		return bpm;
+	}
 
 	/**
 	 * @param {{}} _
@@ -64,13 +108,17 @@
 			.then((buffer) => audioCtx.decodeAudioData(buffer))
 			.then((audioBuffer) => guess(audioBuffer))
 			.then((obj) => {
-				bpm = obj.bpm;
+				const clampedBPM = clampBPM(obj.bpm);
+				bpm = clampedBPM;
+				originalBpm = clampedBPM;
 				offset = obj.offset;
 				// type error with TS :(
 				// tempo = obj.tempo;
-				period = 1 / (obj.bpm / 60);
+				period = 1 / (clampedBPM / 60);
 				loaded = true;
 				loading = false;
+
+				selectedMultiplier = MULTIPLIER_OPTIONS[0].value;
 			})
 			.catch((err) => console.error(err));
 	}
@@ -118,6 +166,13 @@
 		const path = window.URL.createObjectURL(file);
 		setup({}, path);
 	}
+
+	function handleMultiplierChange() {
+		const multpliedBpm = originalBpm * Number(selectedMultiplier);
+		bpm = multpliedBpm;
+		period = 1 / (multpliedBpm / 60);
+		console.log(bpm);
+	}
 </script>
 
 <svelte:head>
@@ -149,6 +204,20 @@
 
 				<dt class="text-gray-500">Offset</dt>
 				<dd class="text-gray-900">{offset.toFixed(2)}s</dd>
+			</dl>
+			<dl
+				class="sm:grid sm:grid-cols-2 sm:gap-4 sm:px-6 py-4"
+				role="radiogroup"
+				aria-labelledby="multiplier-label"
+			>
+				<dt class="text-gray-500" id="multiplier-label">Multiplier</dt>
+				<dd class="text-gray-900">
+					<Radio
+						options={MULTIPLIER_OPTIONS}
+						bind:userSelected={selectedMultiplier}
+						on:change={handleMultiplierChange}
+					/>
+				</dd>
 			</dl>
 			<audio class="mt-3" on:play={play} on:pause={pause} src={beatPath} controls>
 				<track kind="captions" />
