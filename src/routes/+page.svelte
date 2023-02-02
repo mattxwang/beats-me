@@ -194,50 +194,55 @@
 				<div class="large-circle bg-gray-900">off</div>
 			{/if}
 		</p>
-		<div class="max-w-sm rounded overflow-hidden shadow-lg px-6 py-4 bg-white">
-			<dl class="sm:grid sm:grid-cols-2 sm:gap-4 sm:px-6">
-				<dt class="text-gray-500">Song</dt>
-				<dd class="text-gray-900">{beatPath}</dd>
+		<audio class="my-4" on:play={play} on:pause={pause} src={beatPath} controls>
+			<track kind="captions" />
+		</audio>
+		<div class="lg:grid lg:grid-cols-2 lg:gap-4">
+			<div class="max-w-sm rounded overflow-hidden shadow-lg px-6 py-4 bg-white">
+				<dl class="sm:grid sm:grid-cols-2 sm:gap-4 sm:px-6">
+					<dt class="text-gray-500">Song</dt>
+					<dd class="text-gray-900">{beatPath}</dd>
 
-				<dt class="text-gray-500">BPM / Period</dt>
-				<dd class="text-gray-900">{bpm.toFixed(2)} / {period.toFixed(2)}s</dd>
+					<dt class="text-gray-500">BPM / Period</dt>
+					<dd class="text-gray-900">{bpm.toFixed(2)} / {period.toFixed(2)}s</dd>
 
-				<dt class="text-gray-500">Offset</dt>
-				<dd class="text-gray-900">{offset.toFixed(2)}s</dd>
-			</dl>
-			<dl
-				class="sm:grid sm:grid-cols-2 sm:gap-4 sm:px-6 py-4"
-				role="radiogroup"
-				aria-labelledby="multiplier-label"
-			>
-				<dt class="text-gray-500" id="multiplier-label">Multiplier</dt>
-				<dd class="text-gray-900">
-					<Radio
-						options={MULTIPLIER_OPTIONS}
-						bind:userSelected={selectedMultiplier}
-						on:change={handleMultiplierChange}
-					/>
-				</dd>
-			</dl>
-			<audio class="mt-3" on:play={play} on:pause={pause} src={beatPath} controls>
-				<track kind="captions" />
-			</audio>
+					<dt class="text-gray-500">Offset</dt>
+					<dd class="text-gray-900">{offset.toFixed(2)}s</dd>
+				</dl>
+				<dl
+					class="sm:grid sm:grid-cols-2 sm:gap-4 sm:px-6 py-4"
+					role="radiogroup"
+					aria-labelledby="multiplier-label"
+				>
+					<dt class="text-gray-500" id="multiplier-label">Multiplier</dt>
+					<dd class="text-gray-900">
+						<Radio
+							options={MULTIPLIER_OPTIONS}
+							bind:userSelected={selectedMultiplier}
+							on:change={handleMultiplierChange}
+						/>
+					</dd>
+				</dl>
+			</div>
+
+			<div class="section rounded overflow-hidden shadow-lg px-6 py-6 bg-white">
+				<p class="mb-3">choose from our presets:</p>
+				<Select
+					options={PRESETS}
+					display_func={(o) => o}
+					bind:value={selectedBeat}
+					on:change={handleSelectChange}
+				/>
+				<p class="my-3">or, upload a custom song</p>
+				<FileSelect bind:files on:change={handleUpload} />
+			</div>
 		</div>
-
-		<p class="my-3">choose from our presets:</p>
-		<Select
-			options={PRESETS}
-			display_func={(o) => o}
-			bind:value={selectedBeat}
-			on:change={handleSelectChange}
-		/>
-		<p class="my-3">or, upload a custom song</p>
-		<FileSelect bind:files on:change={handleUpload} />
 	{/if}
 </section>
 
 <style>
-	section {
+	section,
+	.section {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
