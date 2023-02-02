@@ -63,7 +63,8 @@
 	 */
 	let beatInterval;
 	let beatPath = DEFAULT_BEAT_PATH;
-	let selectedBeat = DEFAULT_BEAT_PATH;
+	let beatName = DEFAULT_BEAT_PATH;
+	let selectedBeatPath = DEFAULT_BEAT_PATH; // this is bound to the select element; differs when the selector is not used
 	let showBeat = false;
 
 	/**
@@ -137,8 +138,9 @@
 		 */
 		// @ts-ignore
 		const target = e.target;
-		selectedBeat = target.value;
-		setup({}, selectedBeat);
+		selectedBeatPath = target.value;
+		beatName = target.value;
+		setup({}, selectedBeatPath);
 	}
 
 	function play() {
@@ -162,6 +164,8 @@
 			// TODO: error handling
 			return;
 		}
+
+		beatName = file.name;
 
 		const path = window.URL.createObjectURL(file);
 		setup({}, path);
@@ -198,10 +202,10 @@
 			<track kind="captions" />
 		</audio>
 		<div class="lg:grid lg:grid-cols-2 lg:gap-4">
-			<div class="max-w-sm rounded overflow-hidden shadow-lg px-6 py-4 bg-white">
+			<div class="max-w-sm rounded overflow-hidden shadow-lg px-6 py-4 mb-2 bg-white">
 				<dl class="sm:grid sm:grid-cols-2 sm:gap-4 sm:px-6">
 					<dt class="text-gray-500">Song</dt>
-					<dd class="text-gray-900">{beatPath}</dd>
+					<dd class="text-gray-900">{beatName}</dd>
 
 					<dt class="text-gray-500">BPM / Period</dt>
 					<dd class="text-gray-900">{bpm.toFixed(2)} / {period.toFixed(2)}s</dd>
@@ -225,12 +229,12 @@
 				</dl>
 			</div>
 
-			<div class="section rounded overflow-hidden shadow-lg px-6 py-6 bg-white">
+			<div class="section rounded overflow-hidden shadow-lg px-6 py-4 mb-2 bg-white">
 				<p class="mb-3">choose from our presets:</p>
 				<Select
 					options={PRESETS}
 					display_func={(o) => o}
-					bind:value={selectedBeat}
+					bind:value={selectedBeatPath}
 					on:change={handleSelectChange}
 				/>
 				<p class="my-3">or, upload a custom song</p>
